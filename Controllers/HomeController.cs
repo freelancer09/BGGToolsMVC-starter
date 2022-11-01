@@ -28,48 +28,80 @@ namespace BGGToolsMvC.Controllers
             return View();
         }
 
-        public IActionResult CollectionView()
+        [HttpGet]
+        public IActionResult CollectionView(string userName = null)
         {
-            List<Thing> things = new List<Thing>();
-
-            // Load the document
-            XmlDocument doc = new XmlDocument();
-            doc.Load(string.Concat(BGG_API_URL, "collection?username=freelancermike"));
-
-            //Loop through the selected Nodes using XPATH.
-            foreach (XmlNode node in doc.SelectNodes("/items/item"))
+            if (userName == null)
             {
-                string year = "N/A";
-                if (node["yearpublished"] != null) 
-                    year = node["yearpublished"].InnerText;
-
-                //Fetch the Node values and assign it to Model
-                things.Add(new Thing
-                {
-                    ThingId = int.Parse(node.Attributes["objectid"].InnerText),
-                    Name = node["name"].InnerText,
-                    YearPublished = year
-                });
+                return View();
             }
-            return View(things);
+            else
+            {
+                List<Thing> things = new List<Thing>();
+
+                // Load the API XML document
+                XmlDocument doc = new XmlDocument();
+                doc.Load(string.Concat(BGG_API_URL, "collection?username=", userName));
+
+                // If a collection is loaded, process the THINGS
+                if (doc.DocumentElement.Name == "items")
+                {
+                    // Loop through the selected Nodes using XPATH
+                    foreach (XmlNode node in doc.SelectNodes("/items/item"))
+                    {
+                        string year = "N/A";
+                        if (node["yearpublished"] != null)
+                            year = node["yearpublished"].InnerText;
+
+                        // Fetch the Node values and assign it to Model
+                        things.Add(new Thing
+                        {
+                            ThingId = int.Parse(node.Attributes["objectid"].InnerText),
+                            Name = node["name"].InnerText,
+                            YearPublished = year
+                        });
+                    }
+                    ViewBag.UserName = userName;
+                }
+
+                // Check for errors and return the message
+                else if (doc.DocumentElement.Name == "errors")
+                {
+                    string errorMessage = null;
+                    foreach (XmlNode node in doc.SelectNodes("/errors/error"))
+                    {
+                        errorMessage += node["message"].InnerText + " ";
+                    }
+                    ViewBag.ErrorMessage = errorMessage;
+                }
+
+                // Check for errors and return the message
+                else if (doc.DocumentElement.Name == "message")
+                {
+                    ViewBag.ErrorMessage = doc.DocumentElement.InnerText;
+                }
+
+                // Send list of THING to the view
+                return View(things);
+            }
         }
 
         public IActionResult HotList()
         {
             List<Thing> things = new List<Thing>();
 
-            // Load the document
+            // Load the API XML document
             XmlDocument doc = new XmlDocument();
             doc.Load(string.Concat(BGG_API_URL, "hot"));
 
-            //Loop through the selected Nodes.
+            // Loop through the selected Nodes using XPATH
             foreach (XmlNode node in doc.SelectNodes("/items/item"))
             {
                 string year = "N/A";
                 if (node["yearpublished"] != null)
                     year = node["yearpublished"].GetAttribute("value");
                 
-                //Fetch the Node values and assign it to Model
+                // Fetch the Node values and assign it to Model
                 things.Add(new Thing
                 {
                     ThingId = int.Parse(node.Attributes["id"].InnerText),
@@ -77,6 +109,8 @@ namespace BGGToolsMvC.Controllers
                     YearPublished = year
                 });
             }
+
+            // Send List of THING to the view
             return View(things);
         }
 
@@ -85,9 +119,11 @@ namespace BGGToolsMvC.Controllers
         {
             Thing thing = new Thing();
 
+            // Load the API XML document
             XmlDocument doc = new XmlDocument();
             doc.Load(string.Concat(BGG_API_URL, "thing?id=", id));
 
+            // Loop through the selected Nodes using XPATH and assign to Model
             foreach (XmlNode node in doc.SelectNodes("items/item"))
             {
                 thing.ThingId = int.Parse(node.Attributes["id"].InnerText);
@@ -115,6 +151,8 @@ namespace BGGToolsMvC.Controllers
 
                 thing.MinAge = int.Parse(node["minage"].GetAttribute("value"));
             }
+
+            // Send THING to the view
             return View(thing);
         }
 
