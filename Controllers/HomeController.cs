@@ -39,12 +39,16 @@ namespace BGGToolsMvC.Controllers
             //Loop through the selected Nodes using XPATH.
             foreach (XmlNode node in doc.SelectNodes("/items/item"))
             {
+                string year = "N/A";
+                if (node["yearpublished"] != null) 
+                    year = node["yearpublished"].InnerText;
+
                 //Fetch the Node values and assign it to Model
                 things.Add(new Thing
                 {
                     ThingId = int.Parse(node.Attributes["objectid"].InnerText),
                     Name = node["name"].InnerText,
-                    YearPublished = node["yearpublished"].InnerText
+                    YearPublished = year
                 });
             }
             return View(things);
@@ -63,9 +67,8 @@ namespace BGGToolsMvC.Controllers
             {
                 string year = "N/A";
                 if (node["yearpublished"] != null)
-                {
                     year = node["yearpublished"].GetAttribute("value");
-                }
+                
                 //Fetch the Node values and assign it to Model
                 things.Add(new Thing
                 {
@@ -75,6 +78,44 @@ namespace BGGToolsMvC.Controllers
                 });
             }
             return View(things);
+        }
+
+        [Route("Home/Thing/{id}")]
+        public IActionResult Thing(int id)
+        {
+            Thing thing = new Thing();
+
+            XmlDocument doc = new XmlDocument();
+            doc.Load(string.Concat(BGG_API_URL, "thing?id=", id));
+
+            foreach (XmlNode node in doc.SelectNodes("items/item"))
+            {
+                thing.ThingId = int.Parse(node.Attributes["id"].InnerText);
+
+                thing.Name = node["name"].GetAttribute("value");
+
+                thing.Description = node["description"].InnerText;
+
+                string year = "N/A";
+                if (node["yearpublished"] != null)
+                    year = node["yearpublished"].GetAttribute("value");
+                thing.YearPublished = year;
+
+                thing.Thumbnail = node["thumbnail"].InnerText;
+
+                thing.Image = node["image"].InnerText;
+
+                thing.MinPlayers = int.Parse(node["minplayers"].GetAttribute("value"));
+
+                thing.MaxPlayers = int.Parse(node["maxplayers"].GetAttribute("value"));
+
+                thing.MinPlayTime = int.Parse(node["minplaytime"].GetAttribute("value"));
+
+                thing.MaxPlayTime = int.Parse(node["maxplaytime"].GetAttribute("value"));
+
+                thing.MinAge = int.Parse(node["minage"].GetAttribute("value"));
+            }
+            return View(thing);
         }
 
         public IActionResult Privacy()

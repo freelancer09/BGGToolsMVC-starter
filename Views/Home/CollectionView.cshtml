@@ -10,7 +10,7 @@
     @foreach (Thing thing in Model)
     {
         <tr>
-            <td>@thing.ThingId</td>
+            <td><a asp-area="" asp-controller="Home" asp-action="Thing" asp-route-id="@thing.ThingId">@thing.ThingId</a></td>
             <td>@thing.Name</td>
             <td>@thing.YearPublished</td>
         </tr>
